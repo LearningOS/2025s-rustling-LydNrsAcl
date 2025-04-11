@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -70,13 +69,58 @@ impl<T> LinkedList<T> {
         }
     }
 	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
+    where
+        T: std::cmp::PartialOrd
 	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+        let mut res: LinkedList<T> = LinkedList::new();
+        
+        let mut a = list_a.start;
+        let mut b = list_b.start;
+
+        let mut add_node_from_ptr = |mut node_ptr: NonNull<Node<T>>| {
+            unsafe {
+                node_ptr.as_mut().next = None;
+                match res.end {
+                    None => {
+                        res.start = Some(node_ptr);
+                        res.end = Some(node_ptr);
+                    }
+                    Some(end) => {
+                        (*end.as_ptr()).next = Some(node_ptr);
+                        res.end = Some(node_ptr);
+                    }
+                }
+            }
+        };
+
+        while let (Some(a_ptr), Some(b_ptr)) = (a, b) {
+            let a_val = unsafe { &(*a_ptr.as_ptr()).val };
+            let b_val = unsafe { &(*b_ptr.as_ptr()).val };
+
+            if b_val < a_val {
+                let mut node_ptr = b.take().unwrap();
+                b = unsafe{ (*node_ptr.as_ptr()).next };
+                add_node_from_ptr(node_ptr);
+            } else {
+                let mut node_ptr = a.take().unwrap();
+                a = unsafe{ (*node_ptr.as_ptr()).next };
+                add_node_from_ptr(node_ptr);
+            }
         }
+        
+        while let Some(a_ptr) = a {
+            let mut node_ptr = a.take().unwrap();
+            a = unsafe{ (*node_ptr.as_ptr()).next };
+            add_node_from_ptr(node_ptr);
+        }
+
+        while let Some(b_ptr) = b {
+            let mut node_ptr = b.take().unwrap();
+            b = unsafe{ (*node_ptr.as_ptr()).next };
+            add_node_from_ptr(node_ptr);
+        }
+        
+        res
 	}
 }
 
